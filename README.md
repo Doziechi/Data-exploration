@@ -1,4 +1,4 @@
-# Global Layoff Analysis with SQL
+# 🌍Global Layoff Analysis with SQL📊
 This project showcases my ability to perform comprehensive data exploration and analysis using MySQL. It highlights my proficiency in querying, and analyzing datasets to uncover meaningful insights that drive decision-making.
 # 📋Project Overview
 This project leverages SQL to uncover critical insights into global layoffs 📊, highlighting affected industries 🏭, top companies 🏢, and temporal trends 📅. It provides actionable intelligence for business professionals 💼, HR strategists 🧑‍💻, and policymakers 🏛️ to address workforce challenges. With layoffs being a pressing global issue 🌍, this analysis is vital for understanding economic and industry trends, aiding in better hiring and retention strategies ✅.
@@ -87,5 +87,67 @@ SELECT stage, sum(total_laid_off) AS sum_total
 	GROUP BY stage
 	ORDER BY 1 DESC;
 ```
-#### 10. 
+#### 10. Find the total layoffs for each month, excluding rows with a null date, and sorts the results by the month in ascending order.
+
+``` SQL
+ SELECT SUBSTRING(`date`, 1,7) AS `month`, SUM(total_laid_off)
+	FROM layoffs_staging2
+    WHERE SUBSTRING(`date`, 1,7) IS NOT NULL
+    GROUP BY `month`
+    ORDER BY 1 ASC;
+```
+
+#### 11. calculate the total layoffs for each month, then add a running total of layoffs by month.
+
+``` SQL
+WITH rolling_total AS
+    (
+ SELECT SUBSTRING(`date`,1,7) AS `month`, SUM(total_laid_off) AS total_off
+	FROM layoffs_staging2
+    WHERE SUBSTRING(`date`,1,7) IS NOT NULL
+    GROUP BY `month`
+    ORDER BY 1 ASC
+    )
+    SELECT `month`, total_off,
+    SUM(total_off) OVER(ORDER BY `month`) AS rolling_total
+    FROM rolling_total;
+```
+
+#### 12. Retrieve the company names, the year of the layoff, and the total number of layoffs for each company, then group the data by company and year, and sort the results by the total number of layoffs in descending order.
+
+``` SQL
+SELECT company, year(`date`) AS `year`, sum(total_laid_off) AS sum_total
+    FROM layoffs_staging2
+     GROUP BY company, year(`date`)
+     ORDER BY 3 DESC;
+```
+
+#### 13. Calculate the total layoffs by company and year, rank the companies by the number of layoffs for each year, and retrieve the top 5 companies with the most layoffs for each year.
+
+``` SQL
+
+ SELECT company, year(`date`) AS `year`, sum(total_laid_off) AS sum_total
+    FROM layoffs_staging2
+     GROUP BY company, year(`date`)
+     ORDER BY 3 DESC;
+     
+      WITH company_year (company, `year`, total_laid_off) AS
+     (
+      SELECT company, year(`date`) AS `year`, sum(total_laid_off) AS sum_total
+    FROM layoffs_staging2
+     GROUP BY company, year(`date`)
+     ), cte_final AS
+     (
+     SELECT *,
+     DENSE_RANK() OVER (PARTITION BY `year` ORDER BY total_laid_off DESC) AS `rank`
+     FROM company_year
+     WHERE `year` IS NOT NULL
+     )
+     SELECT *
+     FROM cte_final
+     WHERE `rank` <= 5;
+     ```
+    
+
+    
 
